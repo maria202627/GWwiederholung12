@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Escape-Game: Das Genom-Archiv</title>
+<style>
+:root{--bg:#eef3f1;--card:#fff;--ink:#12262b;--muted:#4c6369;--acc:#0f7f74;--accInk:#fff;--ok:#1b7f3b;--okBg:#e1f4e6;--bad:#b3261e;--badBg:#fbe4e2;--line:#c5d3d0;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1a1d;--card:#15272b;--ink:#e6f0ee;--muted:#9bb3b0;--acc:#3ec5b5;--accInk:#062421;--ok:#6fdc8c;--okBg:#173a24;--bad:#ff8a80;--badBg:#3e1d1b;--line:#2c4549}}
+:root[data-theme="dark"]{--bg:#0d1a1d;--card:#15272b;--ink:#e6f0ee;--muted:#9bb3b0;--acc:#3ec5b5;--accInk:#062421;--ok:#6fdc8c;--okBg:#173a24;--bad:#ff8a80;--badBg:#3e1d1b;--line:#2c4549}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:720px;margin:0 auto;padding:16px}
+h1{font-size:1.9rem;line-height:1.15;margin:.4em 0}
+h2{font-size:1.35rem;margin:.2em 0 .3em}
+p{max-width:65ch}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0}
+.prog{display:flex;gap:6px;margin:4px 0 8px}
+.dot{flex:1;height:8px;border-radius:4px;background:var(--line)}
+.dot.done{background:var(--acc)}.dot.cur{background:var(--ink)}
+.letters{display:flex;gap:6px;margin:6px 0}
+.slot{width:38px;height:44px;border:2px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.3rem}
+.slot.on{border-color:var(--acc);color:var(--acc)}
+.row{padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin:8px 0;line-height:2}
+.row.ok{background:var(--okBg);border-color:var(--ok)}
+.row.bad{background:var(--badBg);border-color:var(--bad)}
+select,input{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);max-width:100%}
+button{font:inherit;font-weight:600;padding:12px 18px;border-radius:8px;border:2px solid var(--acc);background:var(--acc);color:var(--accInk);cursor:pointer;min-height:44px}
+button.alt{background:transparent;color:var(--ink);border-color:var(--line)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.hint{border-left:4px solid var(--acc);padding:6px 12px;margin:8px 0;background:var(--bg)}
+.msg{font-weight:600;margin-top:10px}
+.figs{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:8px 0}
+.fig{border:1px solid var(--line);border-radius:8px;padding:6px;background:var(--bg)}
+.fig svg{width:100%;height:auto;display:block}
+.fig b{font-size:1.1rem}
+.win{font-size:1.2rem}
+</style>
+</head>
+<body>
+<main id="app"><h1>🧬 Das Genom-Archiv</h1><p>Die Seite wird geladen …</p><noscript><p><b>JavaScript ist in diesem Browser deaktiviert.</b> Bitte öffnet die Datei direkt in Chrome, Firefox, Safari oder Edge (nicht in einer Vorschau, z. B. auf GitHub oder in einer Mail-App).</p></noscript></main>
+<script>
+window.onerror=function(m,u,l){var a=document.getElementById("app");if(a)a.insertAdjacentHTML("beforeend","<p><b>Fehler:</b> "+m+" (Zeile "+l+")</p>")};
+const TF=["richtig","falsch"];
+const M=["Protein","DNA","RNA","Stärke","nichts davon"];
+const R=[
+{n:"Zell-Labor",i:"🔬",L:"G",st:"Die erste Sperre erkennt nur, wer Zellen wirklich versteht. Ordnet zu.",
+ h:["Tierzellen haben keine Zellwand und keine Chloroplasten.","Prokaryoten besitzen keinen Zellkern, ihre Erbinformation liegt als Ring vor."],
+ it:[["Zellmembran: {}",["nur Tierzelle","nur Pflanzenzelle","beide"],2],
+ ["Zellwand: {}",["nur Tierzelle","nur Pflanzenzelle","beide"],1],
+ ["Zellkern: {}",["nur Tierzelle","nur Pflanzenzelle","beide"],2],
+ ["Chloroplast: {}",["nur Tierzelle","nur Pflanzenzelle","beide"],1],
+ ["Große Zellsaftvakuole: {}",["nur Tierzelle","nur Pflanzenzelle","beide"],1],
+ ["Ring-Chromosom: {}",["Prokaryot","Eukaryot","beide"],0],
+ ["Lineares Chromosom: {}",["Prokaryot","Eukaryot","beide"],1],
+ ["Zellmembran: {}",["Prokaryot","Eukaryot","beide"],2]]},
+{n:"Chromosomen-Tresor",i:"🧬",L:"E",st:"Im Tresor liegen Aussagen über Erbinformation. Entscheidet, was stimmt.",
+ h:["Alle Körperzellen eines Lebewesens haben dieselbe Erbinformation, aber nicht alle Gene sind aktiv.","Ein Gen enthält die Information zur Herstellung eines Merkmals, nicht das Merkmal selbst."],
+ it:[["Chromosomen befinden sich im Zellkern: {}",TF,0],
+ ["Chromosomen sind gleichbedeutend mit Genen: {}",TF,1],
+ ["Körperzellen eines Individuums besitzen alle die gleiche Erbinformation: {}",TF,0],
+ ["Zellen verschiedener Organe besitzen eine unterschiedliche Auswahl der Erbinformation: {}",TF,1],
+ ["Körperzellen besitzen von jedem Chromosom 2 Exemplare: {}",TF,0],
+ ["Die DNA ist ein Schrank mit Schubladen, in denen die Informationen über die Herstellung der Merkmale liegen: {}",TF,0],
+ ["Gen ist ein anderes Wort für Erbsubstanz (DNA): {}",TF,1],
+ ["Ein Gen ist ein Abschnitt auf der DNA: {}",TF,0],
+ ["Ein Gen enthält z. B. die Information für den Bau eines Enzyms: {}",TF,0],
+ ["Ein Gen enthält die braune Augenfarbe selbst: {}",TF,1]]},
+{n:"Molekül-Werkbank",i:"⚗️",L:"N",st:"Vier Molekülmodelle liegen auf der Werkbank. Benennt sie. Achtung: Eines passt zu keinem Namen.",fig:1,
+ h:["Zählt die Baustein-Typen (Farben und Formen) und achtet darauf, ob die Kette verzweigt ist und wie viele Stränge es gibt.","Stärke ist verzweigt, besteht aber nur aus einer Sorte Baustein (Glucose). RNA ist ein Einzelstrang, dessen Bausteine bis auf einen mit der DNA übereinstimmen."],
+ it:[["Modell A ist: {}",M,0],["Modell B ist: {}",M,4],["Modell C ist: {}",M,1],["Modell D ist: {}",M,2]]},
+{n:"Bauplan-Archiv",i:"🗄️",L:"O",st:"Das Archiv öffnet sich, wenn ihr den Bau der DNA kennt.",
+ h:["Nukleotid = Zucker + Phosphat-Gruppe + Base.","Der Gegenstrang ergibt sich aus der Basenpaarung: A mit T, C mit G."],
+ it:[["Ein Nukleotid besteht aus Phosphat-Gruppe, Zucker und {}.",["einer Base","einer Aminosäure","einem Enzym"],0,1],
+ ["Der Zucker in der DNA heißt {}.",["Desoxyribose","Glucose","Stärke"],0,1],
+ ["In der DNA paart Adenin mit {}.",["Thymin","Guanin","Cytosin"],0,1],
+ ["In der DNA paart Cytosin mit {}.",["Guanin","Adenin","Thymin"],0,1],
+ ["Die Basenpaare werden zusammengehalten durch {}.",["Wasserstoffbrücken","Peptidbindungen","Ionenbindungen"],0,1],
+ ["Gegenstrang zu A–T–G–C–C–A: {}",["T–A–C–G–G–T","A–T–G–C–C–A","U–A–C–G–G–U"],0,1],
+ ["Proteine bestehen aus Ketten von {} verschiedenen Aminosäuren.",["4","10","20"],2,1]]},
+{n:"Das Schluss-Schloss",i:"🔐",L:"M",st:"Der Text der Sicherheitsansage ist fehlerhaft. Ergänzt die richtigen Begriffe und den Ablauf.",
+ h:["DNA ist mit vier Kernbasen „geschrieben“, Proteine mit 20 Aminosäuren.","Drei Basen (ein Basentriplett) codieren für eine Aminosäure."],
+ it:[["Alle Zellkerne in einem Organismus enthalten genau die {}.",["gleiche Erbinformation","gleichen Merkmale","gleichen Proteine"],0,1],
+ ["Die Erbinformation der DNA ist in {} verschiedenen Kernbasen „aufgeschrieben“.",["zwei","vier","zehn","zwanzig"],1,1],
+ ["Bei der {} wird die Information in die Aminosäure-„Sprache“ übersetzt.",["Translation","Transkription","Replikation","Transition"],0,1],
+ ["Die Sprache der Proteine besitzt {} „Buchstaben“ (Aminosäuren).",["4","12","20","46"],2,1],
+ ["Ein Basentriplett codiert für {}.",["eine Aminosäure","ein ganzes Protein","eine Kernbase"],0,1],
+ ["Die Transkription (DNA → mRNA) findet statt {}.",["im Zellkern","am Ribosom","an der Zellmembran"],0,1],
+ ["Die Translation (mRNA → Protein) findet statt {}.",["am Ribosom","im Zellkern","in der Zellwand"],0,1]]}
+];
+let s=-1,wrongs=0,hintsUsed=0,hi=[0,0,0,0,0],done=[];
+const app=document.getElementById("app");
+function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+R.forEach(r=>r.it=r.it.map(([q,o,a,sh])=>({q,ans:o[a],o:sh?shuf(o):o})));
+const C=["#e4572e","#f3a712","#5b8def","#6bbf8a","#8e6bbf","#999"];
+function svgs(){
+ const ln="stroke='currentColor' stroke-width='2'";
+ let A="",pts=[],cols=[0,1,2,3,4,5,1,0,2,3,5,4,1,2];
+ cols.forEach((c,i)=>pts.push([16+i*22,30+(i%2?8:-8),c]));
+ A+=`<polyline points='${pts.map(p=>p[0]+","+p[1]).join(" ")}' fill='none' ${ln}/>`+pts.map(p=>`<circle cx='${p[0]}' cy='${p[1]}' r='9' fill='${C[p[2]]}' stroke='currentColor'/>`).join("");
+ const nd=[[20,20,0,-1],[45,30,1,0],[70,22,2,1],[95,34,3,2],[120,26,4,3],[145,38,0,4],[100,58,5,3],[112,80,1,6],[170,30,2,5],[195,42,3,8],[220,32,4,9],[160,64,5,5],[150,86,0,11],[175,90,2,11]];
+ let B=nd.map(n=>n[3]>=0?`<line x1='${nd[n[3]][0]}' y1='${nd[n[3]][1]}' x2='${n[0]}' y2='${n[1]}' ${ln}/>`:"").join("")+nd.map(n=>`<circle cx='${n[0]}' cy='${n[1]}' r='9' fill='${C[n[2]]}' stroke='currentColor'/>`).join("");
+ const t=[0,1,1,2,3,0,0,1,2,3];
+ const sq=(x,y,c,v)=>`<rect x='${x}' y='${y}' width='20' height='20' fill='${C[c]}' stroke='currentColor'/>`+(v?`<ellipse cx='${x+10}' cy='${y+10}' rx='4' ry='6' fill='none' stroke='currentColor'/>`:"");
+ let Cc=`<line x1='6' y1='8' x2='274' y2='8' ${ln}/><line x1='6' y1='74' x2='274' y2='74' ${ln}/>`+t.map((c,i)=>sq(10+i*26,14,c)+sq(10+i*26,42,c^1)).join("");
+ const d=[0,1,1,4,2,0,0,1,4,2];
+ let D=`<line x1='6' y1='8' x2='274' y2='8' ${ln}/>`+d.map((c,i)=>sq(10+i*26,14,c==4?5:c,c==4)).join("");
+ const f=(l,v,x)=>`<div class='fig'><b>${l}</b><svg viewBox='0 0 ${x} ${l=="B"?105:l=="D"?44:l=="C"?80:60}' role='img' aria-label='Molekülmodell ${l}'>${v}</svg></div>`;
+ return `<div class='figs'>${f("A",A,320)}${f("B",B,260)}${f("C",Cc,280)}${f("D",D,280)}</div>`;
+}
+function dots(){return `<div class='prog'>${R.map((r,i)=>`<div class='dot ${i<s?"done":i==s?"cur":""}'></div>`).join("")}</div><div class='letters' aria-label='Gesammelte Buchstaben'>${R.map((r,i)=>`<div class='slot ${i<done.length?"on":""}'>${i<done.length?r.L:"?"}</div>`).join("")}</div>`}
+function show(){
+ if(s<0){app.innerHTML=`<h1>🧬 Das Genom-Archiv</h1><div class='card'><p>Alarm im Forschungslabor: Hacker haben das Genom-Archiv gesperrt. Das Sicherheitssystem öffnet sich nur, wenn jemand das Grundwissen aus den Vorjahren beherrscht.</p><p>Knackt fünf Schlösser. Jeder gelöste Raum liefert einen Buchstaben. Zusammen ergeben die Buchstaben das Codewort für das Archiv.</p><p>Arbeitet im Team an einem Gerät. Hinweise sind erlaubt, kosten aber Zeit und zählen am Ende mit.</p><div class='btns'><button onclick='s=0;show()'>Mission starten</button></div></div>`;return}
+ if(s==5){app.innerHTML=`<h1>Das Archiv-Tor</h1>${dots()}<div class='card'><p>Alle fünf Schlösser sind offen. Setzt die Buchstaben in der Reihenfolge der Räume zusammen und gebt das Codewort ein.</p><input id='cw' maxlength='10' autocomplete='off' aria-label='Codewort'><div class='btns'><button onclick='fin()'>Tor öffnen</button></div><div class='msg' id='fm'></div></div>`;return}
+ if(s==6){app.innerHTML=`<h1>🎉 Archiv entsperrt!</h1>${dots()}<div class='card win'><p>Geschafft. Das Grundwissen sitzt, ihr seid bereit für „Speicherung und Realisierung genetischer Information“.</p><p>Auswertung: ${wrongs} falsche Eingaben, ${hintsUsed} Hinweise.</p></div><div class='card'><b>Zum Weiterdenken (Besprechung im Plenum):</b><ul><li>Warum haben alle Körperzellen dieselbe Erbinformation, obwohl sie verschieden aussehen?</li><li>Was ist der Unterschied zwischen Gen, Chromosom und DNA?</li><li>Wie kommt aus vier Kernbasen die Information für 20 Aminosäuren?</li></ul></div><div class='btns'><button class='alt' onclick='s=-1;wrongs=0;hintsUsed=0;hi=[0,0,0,0,0];done=[];show()'>Nochmal spielen</button></div>`;return}
+ const r=R[s];
+ app.innerHTML=`${dots()}<div class='card'><h2>${r.i} Raum ${s+1}: ${r.n}</h2><p>${r.st}</p>${r.fig?svgs():""}<div id='items'>${r.it.map((x,i)=>`<div class='row' id='r${i}'>${(x.q.includes("{}")?x.q:x.q+" {}").replace("{}",`<select id='s${i}'><option value=''>– wählen –</option>${x.o.map(o=>`<option>${o}</option>`).join("")}</select>`)}</div>`).join("")}</div><div class='btns' id='bt'><button onclick='chk()'>Prüfen</button><button class='alt' onclick='hint()'>Hinweis</button></div><div id='hx'></div><div class='msg' id='m' role='status'></div></div>`;
+ hx();
+}
+function hx(){const r=R[s];document.getElementById("hx").innerHTML=r.h.slice(0,hi[s]).map(t=>`<div class='hint'>💡 ${t}</div>`).join("")}
+function hint(){if(hi[s]<R[s].h.length){hi[s]++;hintsUsed++;hx()}else document.getElementById("m").textContent="Keine weiteren Hinweise. Besprecht euch im Team."}
+function chk(){
+ const r=R[s];let bad=0,empty=0;
+ r.it.forEach((x,i)=>{const sel=document.getElementById("s"+i),row=document.getElementById("r"+i);
+  if(sel.disabled)return;
+  if(!sel.value){empty++;return}
+  if(sel.value===x.ans){row.className="row ok";sel.disabled=true}else{row.className="row bad";bad++}});
+ wrongs+=bad;const m=document.getElementById("m");
+ if(!bad&&!empty){done.push(r.L);document.getElementById("bt").innerHTML=`<button onclick='s++;show()'>Weiter</button>`;m.textContent=`Raum geöffnet! Euer Buchstabe: ${r.L}`;m.style.color="var(--ok)"}
+ else m.textContent=bad?`${bad} Antwort(en) stimmen noch nicht (rot markiert). Ändert sie und prüft erneut.`:"Beantwortet alle Zeilen, bevor ihr prüft.";
+}
+function fin(){const v=document.getElementById("cw").value.trim().toUpperCase();
+ if(v===R.map(r=>r.L).join("")){s=6;show()}else{wrongs++;document.getElementById("fm").textContent="Falsches Codewort. Prüft die Reihenfolge der Buchstaben."}}
+show();
+</script>
+</body>
+</html>
